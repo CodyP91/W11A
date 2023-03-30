@@ -1,77 +1,84 @@
-const options = [
-    {
-        name: "Option 1",
-        description: "This is the first option.",
-        image_url: "https://via.placeholder.com/150"
-    },
-    {
-        name: "Option 2",
-        description: "This is the second option.",
-        image_url: "https://via.placeholder.com/150"
-    },
-    {
-        name: "Option 3",
-        description: "This is the third option.",
-        image_url: "https://via.placeholder.com/150"
-    }
-];
-
-function setCookie(name, value) {
-    document.cookie = `${name}=${value};path=/`;
-}
-
-function getCookie(name) {
-    const cookies = document.cookie.split("; ");
-    for (const cookie of cookies) {
-        const [cookieName, cookieValue] = cookie.split("=");
-        if (cookieName === name) {
-            return cookieValue;
-        }
-    }
-    return null;
-}
-
-function renderOptions() {
-    const optionsDiv = document.getElementById("options");
-    options.forEach(option => {
-        const optionDiv = document.createElement("div");
-        optionDiv.innerHTML = `
-            <h2>${option.name}</h2>
-            <p>${option.description}</p>
-            <img src="${option.image_url}" alt="${option.name}" />
-            <br />
-            <a href="selection.html" onclick="saveSelection('${option.name}')">Select</a>
+function setCookie(name, value, days) {
+    const expires = new Date(Date.now() + days * 86400000).toUTCString();
+    document.cookie = name + '=' + encodeURIComponent(value) + '; expires=' + expires + '; path=/';
+  }
+  
+  function getCookie(name) {
+    const cookies = document.cookie.split('; ').reduce((result, c) => {
+      const [key, val] = c.split('=').map(decodeURIComponent);
+      result[key] = val;
+      return result;
+    }, {});
+    return cookies[name];
+  }
+  
+  function deleteCookie(name) {
+    setCookie(name, '', -1);
+  }
+  
+  document.addEventListener('DOMContentLoaded', function () {
+    if (document.getElementById('options')) {
+      const options = [
+        {
+          name: 'Pizza',
+          description: 'A delicious Italian dish.',
+          image_url: 'https://example.com/pizza.png',
+        },
+        {
+          name: 'Sushi',
+          description: 'A Japanese dish with vinegared rice and various ingredients.',
+          image_url: 'https://example.com/sushi.png',
+        },
+        {
+          name: 'Tacos',
+          description: 'A traditional Mexican dish made from corn or wheat tortilla.',
+          image_url: 'https://example.com/tacos.png',
+        },
+      ];
+  
+      const optionsContainer = document.getElementById('options');
+  
+      options.forEach((option) => {
+        const optionElement = document.createElement('div');
+        optionElement.innerHTML = `
+          <h2>${option.name}</h2>
+          <p>${option.description}</p>
+          <img src="${option.image_url}" alt="${option.name}" width="100">
+          <button>Select</button>
         `;
-        optionsDiv.appendChild(optionDiv);
-    });
-}
-
-function saveSelection(optionName) {
-    const option = options.find(o => o.name === optionName);
-    const jsonOption = JSON.stringify(option);
-    setCookie("selection", jsonOption);
-}
-
-function renderSelection() {
-    const selectedOptionDiv = document.getElementById("selectedOption");
-    const jsonOption = getCookie("selection");
-    if (jsonOption) {
-        const option = JSON.parse(jsonOption);
-        selectedOptionDiv.innerHTML = `
-            <h2>${option.name}</h2>
-            <p>${option.description}</p>
-            <img src="${option.image_url}" alt="${option.name}" />
-        `;
-    } else {
-        selectedOptionDiv.textContent = "No option selected.";
+        optionElement.querySelector('button').addEventListener('click', function () {
+          const currentSelections = JSON.parse(getCookie('selection') || '[]');
+          currentSelections.push(option);
+          setCookie('selection', JSON.stringify(currentSelections), 7);
+        });
+        optionsContainer.appendChild(optionElement);
+      });
     }
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-    if (document.getElementById("options")) {
-        renderOptions();
+  
+    if (document.getElementById('selections')) {
+      const selectionsContainer = document.getElementById('selections');
+      const selections = JSON.parse(getCookie('selection') || '[]');
+  
+      if (selections.length === 0) {
+        selectionsContainer.textContent = 'Please make a selection on the home page.';
+      } else {
+        selections.forEach((selection, index) => {
+          const selectionElement = document.createElement('div');
+          selectionElement.innerHTML = `
+            <h2>${selection.name}</h2>
+            <p>${selection.description}</p>
+            <img src="${selection.image_url}" alt="${selection.name}" width="100">
+            <button>Delete</button>
+          `;
+          selectionElement.querySelector('button').addEventListener('click', function () {
+            const updatedSelections = JSON.parse(getCookie('selection') || '[]');
+            updatedSelections.splice(index, 1);
+            setCookie('selection', JSON.stringify(updatedSelections), 7);
+            location.reload();
+          });
+          selectionsContainer.appendChild(selectionElement);
+        });
+      }
     }
-    if (document.getElementById("selectedOption")) {
-        renderSelection();
-    }
-});
+  });
+  
